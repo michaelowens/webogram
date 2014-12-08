@@ -12,9 +12,9 @@
     "frame": true,
     "position": "center",
     "resizable": true,
-    "width": 800,
+    "width": 1000,
     "min_width": 675,
-    "height": 650,
+    "height": 750,
     "min_height": 650,
     "show": true
   },
