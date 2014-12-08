@@ -747,7 +747,7 @@ angular.module('myApp.controllers', ['myApp.i18n'])
 
   })
 
-  .controller('AppImHistoryController', function ($scope, $location, $timeout, $rootScope, MtpApiManager, AppUsersManager, AppChatsManager, AppMessagesManager, AppPeersManager, ApiUpdatesManager, PeersSelectService, IdleManager, StatusManager, ErrorService) {
+  .controller('AppImHistoryController', function ($scope, $location, $timeout, $rootScope, MtpApiManager, AppUsersManager, AppChatsManager, AppMessagesManager, AppPeersManager, ApiUpdatesManager, PeersSelectService, IdleManager, StatusManager, ErrorService, Storage) {
 
     $scope.$watch('curDialog', applyDialogSelect);
 
@@ -1101,7 +1101,11 @@ angular.module('myApp.controllers', ['myApp.i18n'])
         });
         $scope.$broadcast('ui_history_change');
 
-        AppMessagesManager.readHistory($scope.curDialog.inputPeer);
+        Storage.get('privacymode').then(function (privacyMode) {
+          if (!privacyMode) {
+            AppMessagesManager.readHistory($scope.curDialog.inputPeer);
+          }
+        });
 
       }, function () {
         safeReplaceObject($scope.state, {error: true});
@@ -1288,7 +1292,11 @@ angular.module('myApp.controllers', ['myApp.i18n'])
         // console.log('append check', $rootScope.idle.isIDLE, addedMessage.peerID, $scope.curDialog.peerID);
         if (!$rootScope.idle.isIDLE) {
           $timeout(function () {
-            AppMessagesManager.readHistory($scope.curDialog.inputPeer);
+            Storage.get('privacymode').then(function (privacyMode) {
+              if (!privacyMode) {
+                AppMessagesManager.readHistory($scope.curDialog.inputPeer);
+              }
+            });
           });
         }
       }
@@ -1362,8 +1370,16 @@ angular.module('myApp.controllers', ['myApp.i18n'])
 
     $rootScope.$watch('idle.isIDLE', function (newVal) {
       if (!newVal && $scope.curDialog && $scope.curDialog.peerID && !$scope.historyFilter.mediaType && !$scope.skippedHistory) {
-        AppMessagesManager.readHistory($scope.curDialog.inputPeer);
+        Storage.get('privacymode').then(function (privacyMode) {
+          if (!privacyMode) {
+            AppMessagesManager.readHistory($scope.curDialog.inputPeer);
+          }
+        });
       }
+    });
+
+    $rootScope.$on('ui_message_send', function () {
+      AppMessagesManager.readHistory($scope.curDialog.inputPeer);
     });
 
   })
@@ -1372,7 +1388,7 @@ angular.module('myApp.controllers', ['myApp.i18n'])
     $scope.$on('user_update', angular.noop);
   })
 
-  .controller('AppImSendController', function ($scope, $timeout, MtpApiManager, Storage, AppPeersManager, AppMessagesManager, ApiUpdatesManager, MtpApiFileManager) {
+  .controller('AppImSendController', function ($scope, $rootScope, $timeout, MtpApiManager, Storage, AppPeersManager, AppMessagesManager, ApiUpdatesManager, MtpApiFileManager) {
 
     $scope.$watch('curDialog.peer', resetDraft);
     $scope.$on('user_update', angular.noop);
@@ -1414,6 +1430,7 @@ angular.module('myApp.controllers', ['myApp.i18n'])
 
         resetDraft();
         $scope.$broadcast('ui_message_send');
+        $rootScope.$broadcast('ui_message_send');
       });
 
       return cancelEvent(e);
@@ -1441,7 +1458,11 @@ angular.module('myApp.controllers', ['myApp.i18n'])
 
       if (newVal && newVal.length) {
         if (!$scope.historyFilter.mediaType && !$scope.skippedHistory) {
-          AppMessagesManager.readHistory($scope.curDialog.inputPeer);
+          Storage.get('privacymode').then(function (privacyMode) {
+            if (!privacyMode) {
+              AppMessagesManager.readHistory($scope.curDialog.inputPeer);
+            }
+          });
         }
 
         var backupDraftObj = {};
@@ -2177,6 +2198,7 @@ angular.module('myApp.controllers', ['myApp.i18n'])
 
     $scope.notify = {volume: 0.5};
     $scope.send = {};
+    $scope.privacymode = false;
 
     $scope.$watch('photo.file', onPhotoSelected);
 
@@ -2258,7 +2280,7 @@ angular.module('myApp.controllers', ['myApp.i18n'])
       });
     };
 
-    Storage.get('notify_nodesktop', 'notify_nosound', 'send_ctrlenter', 'notify_volume', 'notify_novibrate').then(function (settings) {
+    Storage.get('notify_nodesktop', 'notify_nosound', 'send_ctrlenter', 'notify_volume', 'notify_novibrate', 'privacymode').then(function (settings) {
       $scope.notify.desktop = !settings[0];
       $scope.send.enter = settings[2] ? '' : '1';
 
@@ -2272,6 +2294,8 @@ angular.module('myApp.controllers', ['myApp.i18n'])
 
       $scope.notify.canVibrate = NotificationsManager.getVibrateSupport();
       $scope.notify.vibrate = !settings[4];
+
+      $scope.privacymode = !!settings[5];
 
       $scope.notify.volumeOf4 = function () {
         return 1 + Math.ceil(($scope.notify.volume - 0.1) / 0.33);
@@ -2328,6 +2352,17 @@ angular.module('myApp.controllers', ['myApp.i18n'])
           Storage.remove('send_ctrlenter');
         } else {
           Storage.set({send_ctrlenter: true});
+        }
+        $rootScope.$broadcast('settings_changed');
+      }
+
+      $scope.togglePrivacyMode = function (newValue) {
+        $scope.privacymode = !$scope.privacymode;
+
+        if ($scope.privacymode) {
+          Storage.set({privacymode: true});
+        } else {
+          Storage.remove('privacymode');
         }
         $rootScope.$broadcast('settings_changed');
       }

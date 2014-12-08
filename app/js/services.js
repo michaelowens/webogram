@@ -186,7 +186,7 @@ angular.module('myApp.services', ['myApp.i18n', 'izhukov.utils'])
       if (user.status &&
           user.status._ == 'userStatusOnline' &&
           user.status.expires < timestampNow) {
-        user.status = user.status.wasStatus || 
+        user.status = user.status.wasStatus ||
                       {_: 'userStatusOffline', was_online: user.status.expires};
         delete user.status.wasStatus;
         $rootScope.$broadcast('user_update', user.id);
@@ -3133,7 +3133,7 @@ angular.module('myApp.services', ['myApp.i18n', 'izhukov.utils'])
     emojiUtf.push(emojiData[emojiCode][0]);
     emojiMap[emojiData[emojiCode][0]] = emojiCode;
   }
-  
+
   var regexAlphaChars = "a-z" +
                         "\\u00c0-\\u00d6\\u00d8-\\u00f6\\u00f8-\\u00ff" + // Latin-1
                         "\\u0100-\\u024f" + // Latin Extended A and B

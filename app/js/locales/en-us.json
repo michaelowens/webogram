@@ -47,6 +47,7 @@
 	"settings_modal_source_code_github": "Source code on GitHub",
 	"settings_modal_follow_us_twitter": "Follow us on Twitter!",
 	"settings_modal_recent_updates": "Recent updates (ver. {version})",
+	"settings_modal_privacymode": "Privacy Mode",
 
 	"page_title_pluralize_notifications": "{'0': 'No notifications', 'one': '1 notification', 'other': '{} notifications'}",
 
